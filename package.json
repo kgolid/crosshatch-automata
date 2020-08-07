@@ -1,0 +1,24 @@
+{
+  "name": "crosshatch-automata",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c",
+    "watch": "rollup -c -w"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "browser": "dist/index.js",
+  "dependencies": {
+    "chromotome": "^1.17.6",
+    "dat.gui": "^0.7.7"
+  },
+  "devDependencies": {
+    "rollup": "1.1.2",
+    "rollup-plugin-node-resolve": "4.0.0",
+    "rollup-plugin-commonjs": "9.2.0"
+  }
+}
