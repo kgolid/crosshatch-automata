@@ -39,6 +39,8 @@ let sketch = function (p) {
       redraw: draw,
       init_state: 'empty',
       segment_padding: 0,
+      display_stroke: false,
+      display_fill: true,
     };
 
     ui(options, draw, randomize_rules);
@@ -118,24 +120,36 @@ let sketch = function (p) {
       p.translate(0, (y1 - y0) * cell_dim);
       p.scale(1, -1);
     }
-    for (let i = 0; i < y1 - y0; i++) {
-      for (let j = 0; j < x1 - x0; j++) {
-        const x = j + x0;
-        const y = i + y0;
-        fill_cell(grid[y][x], j * cell_dim, i * cell_dim);
-        fill_cell(grid[y][x], j * cell_dim + 0.5, i * cell_dim + 0.5);
+
+    if (options.display_fill) {
+      for (let i = 0; i < y1 - y0; i++) {
+        for (let j = 0; j < x1 - x0; j++) {
+          const x = j + x0;
+          const y = i + y0;
+          fill_cell(grid[y][x], j * cell_dim, i * cell_dim);
+          fill_cell(grid[y][x], j * cell_dim + 0.5, i * cell_dim + 0.5);
+        }
+      }
+    }
+
+    if (options.display_stroke) {
+      for (let i = 0; i < y1 - y0; i++) {
+        for (let j = 0; j < x1 - x0; j++) {
+          const x = j + x0;
+          const y = i + y0;
+          stroke_cell(grid[y][x], j * cell_dim, i * cell_dim);
+        }
       }
     }
 
     p.pop();
   }
 
-  /*
   function stroke_cell(cell, x, y) {
     p.push();
     p.translate(x, y);
 
-    p.strokeWeight(2);
+    p.strokeWeight(3);
     p.stroke(palette.stroke);
     if (cell.horizontal_line) p.line(0, 0, cell_dim, 0);
     if (cell.vertical_line) p.line(0, 0, 0, cell_dim);
@@ -144,7 +158,6 @@ let sketch = function (p) {
 
     p.pop();
   }
-  */
 
   function fill_cell(cell, x, y) {
     p.push();
@@ -193,14 +206,14 @@ let sketch = function (p) {
     if (p.keyCode === 80)
       p.saveCanvas(
         'crosshatch-' +
-          options.h_rule +
+          options.rule_h +
           '-' +
-          options.v_rule +
+          options.rule_v +
           '-' +
-          options.d_rule +
+          options.rule_d +
           '-' +
-          options.a_rule,
         'jpeg'
+          options.rule_a,
       );
   };
 };

@@ -49,6 +49,8 @@ export default function (options, run, randomize_rules) {
 
   let color_folder = gui.addFolder('Colors');
   color_folder.add(options, 'palette_name', tome.getNames()).name('Color palette').onChange(run);
+  color_folder.add(options, 'display_stroke').name('Display stroke').onChange(run);
+  color_folder.add(options, 'display_fill').name('Display fill').onChange(run);
   color_folder.open();
 
   gui.width = 350;
