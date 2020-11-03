@@ -212,8 +212,8 @@ let sketch = function (p) {
           '-' +
           options.rule_d +
           '-' +
-        'jpeg'
           options.rule_a,
+        'png'
       );
   };
 };
