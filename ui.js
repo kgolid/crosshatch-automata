@@ -32,6 +32,7 @@ export default function (options, run, randomize_rules) {
   symm_folder.open();
 
   let divider_folder = gui.addFolder('Dividers');
+  divider_folder.add(options, 'top_down').name('Top-down rule application').onChange(run);
   divider_folder.add(options, 'rule_h').name('Horizontal rule');
   divider_folder.add(options, 'rule_v').name('Vertical rule');
   divider_folder.add(options, 'rule_d').name('Desc Diagonal rule');

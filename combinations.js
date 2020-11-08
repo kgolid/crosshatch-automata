@@ -16,7 +16,7 @@ const color_combo = (n, w, num) => {
   const nw = next(w);
 
   return [
-    { id: 0, north: n, east: n, south: w, west: w },
+    { id: 0, north: n, east: n, south: w, west: w }, // n-n-n-n for top-down mode
     { id: 1, north: w, east: w, south: w, west: w },
     { id: 2, north: n, east: n, south: n, west: n },
     { id: 3, north: m, east: m, south: m, west: m },
@@ -24,7 +24,7 @@ const color_combo = (n, w, num) => {
     { id: 5, north: m, east: m, south: w, west: w },
     { id: 6, north: n, east: n, south: m, west: m },
     { id: 7, north: nn, east: nn, south: mix(nn, w), west: mix(nn, w) },
-    { id: 8, north: n, east: n, south: n, west: w },
+    { id: 8, north: n, east: nn, south: nn, west: w }, // n-nn-nn-n for top-down mode
     { id: 9, north: w, east: nw, south: nw, west: w },
     { id: 10, north: n, east: nn, south: nn, west: n },
     { id: 11, north: m, east: next(m), south: next(m), west: m },

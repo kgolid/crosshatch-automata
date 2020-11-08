@@ -21,7 +21,7 @@
     const nw = next(w);
 
     return [
-      { id: 0, north: n, east: n, south: w, west: w },
+      { id: 0, north: n, east: n, south: w, west: w }, // n-n-n-n for top-down mode
       { id: 1, north: w, east: w, south: w, west: w },
       { id: 2, north: n, east: n, south: n, west: n },
       { id: 3, north: m, east: m, south: m, west: m },
@@ -29,7 +29,7 @@
       { id: 5, north: m, east: m, south: w, west: w },
       { id: 6, north: n, east: n, south: m, west: m },
       { id: 7, north: nn, east: nn, south: mix(nn, w), west: mix(nn, w) },
-      { id: 8, north: n, east: n, south: n, west: w },
+      { id: 8, north: n, east: nn, south: nn, west: w }, // n-nn-nn-n for top-down mode
       { id: 9, north: w, east: nw, south: nw, west: w },
       { id: 10, north: n, east: nn, south: nn, west: n },
       { id: 11, north: m, east: next(m), south: next(m), west: m },
@@ -185,21 +185,87 @@
   // Returns given number in the form of a tertiary function (a rule)
   const get_rule = (base, num) => (...bs) => get_bit(num, base, bs.length, combine$1(bs, base));
 
-  var display_label = (p, nums, col, x, y) => {
-    p.push();
-    p.translate(x, y);
+  function get_pattern_top_down (rule_nums, num_of_cols, init_state, width, height) {
+    const rule_fns = {
+      h_rule: get_rule$1(2, rule_nums.h),
+      v_rule: get_rule$1(2, rule_nums.v),
+      d_rule: get_rule$1(2, rule_nums.d),
+      a_rule: get_rule$1(2, rule_nums.a),
+    };
 
-    p.fill(col);
-    p.noStroke();
-
-    nums.forEach((num, i) => {
-      for (var x = 0; x < 8; x++) {
-        if (get_bit$1(num, 2, 8, 7 - x)) p.ellipse(x * 12, i * 10, 8, 8);
+    // Create grid of size w+1, h+1, as first row and col are empty.
+    const grid = empty_cell_grid$1(width, height);
+    //grid[0][0] = new Cell(0, 0, 1, 1);
+    for (let i = 0; i < height; i++) {
+      for (let j = 0; j < width; j++) {
+        if (i === 0) {
+          //if (init_state === 'corner_cross' && i + j === 0) grid[i][j] = new Cell(0, 0, 1, 1);
+          if (init_state === 'corner_cross' && j === width / 2) grid[i][j] = new Cell$1(0, 0, 1, 1);
+          if (init_state === 'random')
+            grid[i][j] = new Cell$1(
+              random_int(num_of_cols),
+              random_int(num_of_cols),
+              random_int(num_of_cols),
+              random_int(num_of_cols)
+            );
+        } else {
+          grid[i][j] = calculate_new_cell_2(neighbors_of$1(j, i, grid, width), rule_fns, num_of_cols);
+        }
       }
-    });
-    p.pop();
+    }
+
+    return grid;
+  }
+
+  const calculate_new_cell_2 = (
+    { nw, n, ne, w },
+    { h_rule, v_rule, d_rule, a_rule },
+    num_of_cols
+  ) => {
+    var h_line = h_rule(nw.ascending_line, n.horizontal_line, ne.descending_line);
+    var v_line = v_rule(nw.descending_line, n.vertical_line, ne.ascending_line);
+    var d_line = d_rule(nw.vertical_line, n.ascending_line, ne.horizontal_line);
+    var a_line = a_rule(nw.horizontal_line, n.descending_line, ne.vertical_line);
+
+    var cols = get_cell_colors(
+      n.south_color,
+      w ? w.east_color : nw.east_color,
+      num_of_cols,
+      h_line,
+      v_line,
+      d_line,
+      a_line
+    );
+
+    return new Cell$1(h_line, v_line, d_line, a_line, cols.north, cols.east, cols.south, cols.west);
   };
 
+  const neighbors_of$1 = (x, y, arr, width) => ({
+    nw: arr[y - 1][x < 1 ? width - 1 : x - 1],
+    n: arr[y - 1][x],
+    ne: arr[y - 1][(x + 1) % width],
+    w: arr[y][x < 1 ? width - 1 : x - 1],
+  });
+
+  class Cell$1 {
+    constructor(h, v, d, a, n, e, s, w) {
+      this.horizontal_line = h || 0;
+      this.vertical_line = v || 0;
+      this.descending_line = d || 0;
+      this.ascending_line = a || 0;
+
+      this.north_color = n || 0;
+      this.east_color = e || 0;
+      this.south_color = s || 0;
+      this.west_color = w || 0;
+    }
+  }
+
+  const empty_cell_grid$1 = (width, height) => {
+    return [...Array(height)].map((_) => [...Array(width)].map((_) => new Cell$1()));
+  };
+
+  // Get bit at pos(ition) for num(ber)
   const get_bit$1 = (num, base, size, pos) => {
     return parseInt(
       Number(num)
@@ -211,6 +277,13 @@
         .charAt(pos)
     );
   };
+
+  const combine$2 = (bs, base) => {
+    return parseInt(bs.join(''), base);
+  };
+
+  // Returns given number in the form of a tertiary function (a rule)
+  const get_rule$1 = (base, num) => (...bs) => get_bit$1(num, base, bs.length, combine$2(bs, base));
 
   /**
    * dat-gui JavaScript Controller Library
@@ -2798,6 +2871,12 @@
       background: '#161616',
     },
     {
+      name: 'yuma_punk2',
+      colors: ['#f2d002', '#f7f5e1', '#ec643b'],
+      stroke: '#19080e',
+      background: '#f7f5e1',
+    },
+    {
       name: 'moir',
       colors: ['#a49f4f', '#d4501e', '#f7c558', '#ebbaa6'],
       stroke: '#161716',
@@ -2856,6 +2935,36 @@
       colors: ['#be1c24', '#d1a082', '#037b68', '#d8b1a5', '#1c2738', '#c95a3f'],
       stroke: '#0e0f27',
       background: '#f5b28a',
+    },
+    {
+      name: 'juxtapoz',
+      colors: ['#20357e', '#f44242', '#ffffff'],
+      stroke: '#000000',
+      background: '#cfc398',
+    },
+    {
+      name: 'hurdles',
+      colors: ['#e16503', '#dc9a0f', '#dfe2b4', '#66a7a6'],
+      stroke: '#3c1c03',
+      background: '#3c1c03',
+    },
+    {
+      name: 'ludo',
+      colors: ['#df302f', '#e5a320', '#0466b3', '#0f7963'],
+      stroke: '#272621',
+      background: '#dedccd',
+    },
+    {
+      name: 'riff',
+      colors: ['#e24724', '#c7c7c7', '#1f3e7c', '#d29294', '#010203'],
+      stroke: '#010203',
+      background: '#f2f2f2',
+    },
+    {
+      name: 'san ramon',
+      colors: ['#4f423a', '#f6a74b', '#589286', '#f8e9e2', '#2c2825'],
+      stroke: '#2c2825',
+      background: '#fff',
     },
   ];
 
@@ -3320,56 +3429,62 @@
       name: 'dt01',
       colors: ['#172a89', '#f7f7f3'],
       stroke: '#172a89',
-      background: '#f3abb0'
+      background: '#f3abb0',
     },
     {
       name: 'dt02',
       colors: ['#302956', '#f3c507'],
       stroke: '#302956',
-      background: '#eee3d3'
+      background: '#eee3d3',
     },
     {
       name: 'dt03',
       colors: ['#000000', '#a7a7a7'],
       stroke: '#000000',
-      background: '#0a5e78'
+      background: '#0a5e78',
     },
     {
       name: 'dt04',
       colors: ['#50978e', '#f7f0df'],
       stroke: '#000000',
-      background: '#f7f0df'
+      background: '#f7f0df',
     },
     {
       name: 'dt05',
       colors: ['#ee5d65', '#f0e5cb'],
       stroke: '#080708',
-      background: '#f0e5cb'
+      background: '#f0e5cb',
     },
     {
       name: 'dt06',
       colors: ['#271f47', '#e7ceb5'],
       stroke: '#271f47',
-      background: '#cc2b1c'
+      background: '#cc2b1c',
     },
     {
       name: 'dt07',
       colors: ['#6a98a5', '#d24c18'],
       stroke: '#efebda',
-      background: '#efebda'
+      background: '#efebda',
     },
     {
       name: 'dt08',
       colors: ['#5d9d88', '#ebb43b'],
       stroke: '#efebda',
-      background: '#efebda'
+      background: '#efebda',
     },
     {
       name: 'dt09',
       colors: ['#052e57', '#de8d80'],
       stroke: '#efebda',
-      background: '#efebda'
-    }
+      background: '#efebda',
+    },
+    {
+      name: 'dt10',
+      colors: ['#e5dfcf', '#151513'],
+      stroke: '#151513',
+      background: '#e9b500',
+    },
   ];
 
   var hilda = [
@@ -3640,6 +3755,120 @@
     },
   ];
 
+  var dale = [
+    {
+      name: 'dale_paddle',
+      colors: [
+        '#ff7a5a',
+        '#765aa6',
+        '#fee7bc',
+        '#515e8c',
+        '#ffc64a',
+        '#b460a6',
+        '#ffffff',
+        '#4781c1',
+      ],
+      stroke: '#000000',
+      background: '#abe9e8',
+    },
+    {
+      name: 'dale_night',
+      colors: ['#ae5d9d', '#f1e8bc', '#ef8fa3', '#f7c047', '#58c9ed', '#f77150'],
+      stroke: '#000000',
+      background: '#00ae83',
+    },
+    {
+      name: 'dale_cat',
+      colors: ['#f77656', '#f7f7f7', '#efc545', '#dfe0e2', '#3c70bd', '#66bee4'],
+      stroke: '#000000',
+      background: '#f6e0b8',
+    },
+  ];
+
+  var cako = [
+    {
+      name: 'cako1',
+      colors: ['#000000', '#d55a3a', '#2a5c8a', '#7e7d14', '#dbdac9'],
+      stroke: '#000000',
+      background: '#f4e9d5',
+    },
+    {
+      name: 'cako2',
+      colors: ['#dbdac9', '#d55a3a', '#2a5c8a', '#b47b8c', '#7e7d14'],
+      stroke: '#000000',
+      background: '#000000',
+    },
+    {
+      name: 'cako2_sub1',
+      colors: ['#dbdac9', '#d55a3a', '#2a5c8a'],
+      stroke: '#000000',
+      background: '#000000',
+    },
+    {
+      name: 'cako2_sub2',
+      colors: ['#dbdac9', '#d55a3a', '#7e7d14'],
+      stroke: '#000000',
+      background: '#000000',
+    },
+  ];
+
+  var mayo = [
+    {
+      name: 'mayo1',
+      colors: ['#ea510e', '#ffd203', '#0255a3', '#039177', '#111111'],
+      stroke: '#111111',
+      background: '#fff',
+    },
+    {
+      name: 'mayo2',
+      colors: ['#ea663f', '#f9cc27', '#84afd7', '#7ca994', '#f1bbc9', '#242424'],
+      stroke: '#2a2a2a',
+      background: '#f5f6f1',
+    },
+    {
+      name: 'mayo3',
+      colors: ['#ea5b19', '#f8c9b9', '#137661', '#2a2a2a'],
+      stroke: '#2a2a2a',
+      background: '#f5f4f0',
+    },
+  ];
+
+  var exposito = [
+    {
+      name: 'exposito',
+      colors: [
+        '#8bc9c3',
+        '#ffae43',
+        '#ea432c',
+        '#228345',
+        '#d1d7d3',
+        '#524e9c',
+        '#9dc35e',
+        '#f0a1a1',
+      ],
+      stroke: '#fff',
+      background: '#000000',
+    },
+    {
+      name: 'exposito_sub1',
+      colors: ['#8bc9c3', '#ffae43', '#ea432c', '#524e9c'],
+      stroke: '#fff',
+      background: '#000000',
+    },
+    {
+      name: 'exposito_sub2',
+      colors: ['#8bc9c3', '#ffae43', '#ea432c', '#524e9c', '#f0a1a1', '#228345'],
+      stroke: '#fff',
+      background: '#000000',
+    },
+    {
+      name: 'exposito_sub3',
+      colors: ['#ffae43', '#ea432c', '#524e9c', '#f0a1a1'],
+      stroke: '#fff',
+      background: '#000000',
+    },
+  ];
+
   const pals = misc.concat(
     ranganath,
     roygbivs,
@@ -3656,7 +3885,11 @@
     spatial,
     jung,
     system,
-    flourish
+    flourish,
+    dale,
+    cako,
+    mayo,
+    exposito
   );
 
   var palettes = pals.map((p) => {
@@ -3708,6 +3941,7 @@
     symm_folder.open();
 
     let divider_folder = gui$$1.addFolder('Dividers');
+    divider_folder.add(options, 'top_down').name('Top-down rule application').onChange(run);
     divider_folder.add(options, 'rule_h').name('Horizontal rule');
     divider_folder.add(options, 'rule_v').name('Vertical rule');
     divider_folder.add(options, 'rule_d').name('Desc Diagonal rule');
@@ -3725,6 +3959,8 @@
 
     let color_folder = gui$$1.addFolder('Colors');
     color_folder.add(options, 'palette_name', getNames()).name('Color palette').onChange(run);
+    color_folder.add(options, 'display_stroke').name('Display stroke').onChange(run);
+    color_folder.add(options, 'display_fill').name('Display fill').onChange(run);
     color_folder.open();
 
     gui$$1.width = 350;
@@ -3762,6 +3998,7 @@
         initial_horizontal_reflection: false,
         initial_vertical_reflection: false,
         palette_name: 'skyspider',
+        top_down: false,
         rule_h: random_int(Math.pow(2, 8)),
         rule_v: random_int(Math.pow(2, 8)),
         rule_d: random_int(Math.pow(2, 8)),
@@ -3769,6 +4006,8 @@
         redraw: draw,
         init_state: 'empty',
         segment_padding: 0,
+        display_stroke: false,
+        display_fill: true,
       };
 
       ui(options, draw, randomize_rules);
@@ -3791,7 +4030,10 @@
 
       const grid_terminal_x = options.grid_init_x + options.grid_size_x;
       const grid_terminal_y = options.grid_init_y + options.grid_size_y;
-      const grid = get_pattern(
+
+      const pattern = options.top_down ? get_pattern_top_down : get_pattern;
+
+      const grid = pattern(
         rules,
         palette.colors.length,
         options.init_state,
@@ -3848,24 +4090,36 @@
         p.translate(0, (y1 - y0) * cell_dim);
         p.scale(1, -1);
       }
-      for (let i = 0; i < y1 - y0; i++) {
-        for (let j = 0; j < x1 - x0; j++) {
-          const x = j + x0;
-          const y = i + y0;
-          fill_cell(grid[y][x], j * cell_dim, i * cell_dim);
-          fill_cell(grid[y][x], j * cell_dim + 0.5, i * cell_dim + 0.5);
+
+      if (options.display_fill) {
+        for (let i = 0; i < y1 - y0; i++) {
+          for (let j = 0; j < x1 - x0; j++) {
+            const x = j + x0;
+            const y = i + y0;
+            fill_cell(grid[y][x], j * cell_dim, i * cell_dim);
+            fill_cell(grid[y][x], j * cell_dim + 0.5, i * cell_dim + 0.5);
+          }
+        }
+      }
+
+      if (options.display_stroke) {
+        for (let i = 0; i < y1 - y0; i++) {
+          for (let j = 0; j < x1 - x0; j++) {
+            const x = j + x0;
+            const y = i + y0;
+            stroke_cell(grid[y][x], j * cell_dim, i * cell_dim);
+          }
         }
       }
 
       p.pop();
     }
 
-    /*
     function stroke_cell(cell, x, y) {
       p.push();
       p.translate(x, y);
 
-      p.strokeWeight(2);
+      p.strokeWeight(3);
       p.stroke(palette.stroke);
       if (cell.horizontal_line) p.line(0, 0, cell_dim, 0);
       if (cell.vertical_line) p.line(0, 0, 0, cell_dim);
@@ -3874,7 +4128,6 @@
 
       p.pop();
     }
-    */
 
     function fill_cell(cell, x, y) {
       p.push();
@@ -3923,14 +4176,14 @@
       if (p.keyCode === 80)
         p.saveCanvas(
           'crosshatch-' +
-            options.h_rule +
+            options.rule_h +
             '-' +
-            options.v_rule +
+            options.rule_v +
             '-' +
-            options.d_rule +
+            options.rule_d +
             '-' +
-            options.a_rule,
-          'jpeg'
+            options.rule_a,
+          'png'
         );
     };
   };

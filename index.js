@@ -1,4 +1,6 @@
 import get_pattern from './automata';
+import get_pattern_top_down from './automata-top-down';
+
 import display_label from './label';
 import ui from './ui';
 
@@ -32,6 +34,7 @@ let sketch = function (p) {
       initial_horizontal_reflection: false,
       initial_vertical_reflection: false,
       palette_name: 'skyspider',
+      top_down: false,
       rule_h: random_int(Math.pow(2, 8)),
       rule_v: random_int(Math.pow(2, 8)),
       rule_d: random_int(Math.pow(2, 8)),
@@ -63,7 +66,10 @@ let sketch = function (p) {
 
     const grid_terminal_x = options.grid_init_x + options.grid_size_x;
     const grid_terminal_y = options.grid_init_y + options.grid_size_y;
-    const grid = get_pattern(
+
+    const pattern = options.top_down ? get_pattern_top_down : get_pattern;
+
+    const grid = pattern(
       rules,
       palette.colors.length,
       options.init_state,
