@@ -8,9 +8,9 @@ import { random_int } from './util';
 
 import * as tome from 'chromotome';
 
-const canvas_width = 1300;
-const canvas_height = 1300;
-const padding = 200;
+const canvas_width = 1100;
+const canvas_height = 1100;
+const padding = 100;
 
 let options;
 
@@ -21,14 +21,15 @@ let sketch = function (p) {
   p.setup = function () {
     p.createCanvas(canvas_width, canvas_height);
     p.noLoop();
+    p.pixelDensity(2);
 
     options = {
       grid_size_x: 20,
       grid_size_y: 20,
-      grid_init_x: 4,
-      grid_init_y: 8,
-      repeats_x: 2,
-      repeats_y: 2,
+      grid_init_x: 0,
+      grid_init_y: 0,
+      repeats_x: 1,
+      repeats_y: 1,
       horizontal_reflection: true,
       vertical_reflection: true,
       initial_horizontal_reflection: false,
@@ -40,7 +41,7 @@ let sketch = function (p) {
       rule_d: random_int(Math.pow(2, 8)),
       rule_a: random_int(Math.pow(2, 8)),
       redraw: draw,
-      init_state: 'empty',
+      init_state: 'corner_cross',
       segment_padding: 0,
       display_stroke: false,
       display_fill: true,
@@ -90,7 +91,7 @@ let sketch = function (p) {
 
     const label_x = canvas_width - padding - 88;
     const label_y = canvas_height - padding + 20;
-    display_label(p, [rules.h, rules.v, rules.d, rules.a], p.color(0, 50), label_x, label_y);
+    // display_label(p, [rules.h, rules.v, rules.d, rules.a], p.color(0, 20), label_x, label_y);
   }
 
   function draw_pattern(grid, x0, y0, x1, y1, xpos, ypos) {
